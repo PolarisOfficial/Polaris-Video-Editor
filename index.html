@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Polaris Studio</title>
+  <style>
+    :root {
+      --bg: #0d0e12;
+      --panel: #161820;
+      --panel-hover: #1f222e;
+      --border: #282c3d;
+      --text: #f0f2f8;
+      --muted: #828a9e;
+      --accent: #3b82f6;
+      --accent-glow: rgba(59, 130, 246, 0.25);
+      --accent-green: #10b981;
+      --danger: #ef4444;
+      --font-mono: ui-monospace, SFMono-Regular, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* Keyframe Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulseRed {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: -0.3px;
+    }
+
+    .brand-badge {
+      background: #232736;
+      color: var(--accent);
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      outline: none;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      touch-action: manipulation;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    button:hover:not(:disabled) {
+      border-color: #4b526d;
+      background: var(--panel-hover);
+      transform: translateY(-1px);
+    }
+    button:active:not(:disabled) {
+      transform: translateY(0);
+    }
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    button.btn-green {
+      background: var(--accent-green);
+      color: #041f15;
+      font-weight: 600;
+      border: none;
+    }
+    button.btn-green:hover:not(:disabled) {
+      opacity: 0.92;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+    }
+
+    button.btn-danger {
+      color: var(--danger);
+      background: transparent;
+      border-color: var(--border);
+    }
+    button.btn-danger:hover:not(:disabled) {
+      background: rgba(239, 68, 68, 0.12);
+      border-color: var(--danger);
+    }
+
+    .rec-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--danger);
+      animation: pulseRed 1.2s infinite;
+    }
+
+    /* Main Workspace */
+    .workspace {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 16px;
+      max-width: 1000px;
+      width: 100%;
+      margin: 0 auto;
+      overflow-y: auto;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .preview-pane {
+      flex: 1;
+      min-height: 260px;
+      background: #000;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      max-height: 58vh;
+      object-fit: contain;
+      outline: none;
+    }
+
+    .placeholder-drop {
+      text-align: center;
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      width: 100%;
+      padding: 30px;
+      transition: color 0.2s ease, border-color 0.2s ease;
+    }
+    .placeholder-drop:hover {
+      color: var(--text);
+    }
+
+    /* Timeline Trimmer Card */
+    .timeline-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .timeline-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+
+    .track-container {
+      position: relative;
+      height: 54px;
+      background: #08090d;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      user-select: none;
+      touch-action: none;
+    }
+
+    .track-bar {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0%;
+      right: 0%;
+      background: var(--accent-glow);
+      border-left: 4px solid var(--accent);
+      border-right: 4px solid var(--accent);
+      pointer-events: none;
+      transition: left 0.05s linear, right 0.05s linear;
+    }
+
+    .range-slider-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    input[type="range"] {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      margin: 0;
+      opacity: 0;
+      cursor: pointer;
+      pointer-events: auto;
+      touch-action: manipulation;
+    }
+
+    .controls-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    /* Analytics Side Drawer */
+    .drawer-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .drawer-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .drawer-content {
+      position: absolute;
+      top: 0;
+      left: -340px;
+      width: 320px;
+      height: 100%;
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+    }
+
+    .drawer-overlay.active .drawer-content {
+      transform: translateX(340px);
+    }
+
+    .drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+
+    .metric-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .metric-box {
+      background: #0f1118;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .metric-val {
+      font-size: 18px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: var(--accent);
+    }
+
+    @media (max-width: 600px) {
+      header { padding: 10px 12px; }
+      .header-actions button { padding: 6px 10px; font-size: 12px; }
+      .workspace { padding: 10px; gap: 12px; }
+      .preview-pane { min-height: 200px; }
+      .drawer-content { width: 280px; left: -300px; }
+      .drawer-overlay.active .drawer-content { transform: translateX(300px); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Hidden Admin Telemetry Drawer (Triggered by Ctrl x 3) -->
+  <div class="drawer-overlay" id="analytics-drawer">
+    <div class="drawer-content">
+      <div class="drawer-header">
+        <div>
+          <b style="font-size: 15px;">Studio Telemetry</b>
+          <div style="font-size: 11px; color: var(--muted);">Lifetime Client Storage Metrics</div>
+        </div>
+        <button id="close-drawer-btn" style="padding: 4px 8px; font-size: 12px;">✕</button>
+      </div>
+
+      <div class="metric-grid">
+        <div class="metric-box">
+          <span style="font-size: 13px;">Total Site Visits</span>
+          <span class="metric-val" id="metric-visits">0</span>
+        </div>
+        <div class="metric-box">
+          <span style="font-size: 13px;">Media Loaded</span>
+          <span class="metric-val" id="metric-uploads">0</span>
+        </div>
+        <div class="metric-box">
+          <span style="font-size: 13px;">Recordings Started</span>
+          <span class="metric-val" id="metric-recordings">0</span>
+        </div>
+        <div class="metric-box">
+          <span style="font-size: 13px;">Trims Adjusted</span>
+          <span class="metric-val" id="metric-trims">0</span>
+        </div>
+        <div class="metric-box">
+          <span style="font-size: 13px;">Clips Exported</span>
+          <span class="metric-val" id="metric-exports">0</span>
+        </div>
+        <div class="metric-box" style="border-color: rgba(59, 130, 246, 0.4);">
+          <span style="font-size: 13px;">Worldwide Visits</span>
+          <span class="metric-val" id="metric-global-visits" style="color: var(--accent-green);">--</span>
+        </div>
+      </div>
+
+      <div style="font-size: 11px; color: var(--muted); margin-top: auto; line-height: 1.4;">
+        Press <b>Ctrl 3 times</b> anywhere to toggle this drawer panel.
+      </div>
+    </div>
+  </div>
+
+  <header>
+    <div class="brand">
+      <span>Polaris</span>
+      <span class="brand-badge">Studio</span>
+    </div>
+    <div class="header-actions">
+      <button id="rec-mic-btn">🎙️ Record Mic</button>
+      <button id="rec-screen-btn">🖥️ Record Screen</button>
+      <button id="stop-rec-btn" class="btn-danger" style="display: none;">
+        <span class="rec-indicator"></span> Stop Recording
+      </button>
+      <button id="clear-btn" class="btn-danger">Clear All</button>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <div class="preview-pane" id="preview-pane">
+      <div class="placeholder-drop" id="dropzone">
+        <div style="font-size: 36px; opacity: 0.8;">🎬</div>
+        <div><b>Click or drop video/audio here</b></div>
+        <div style="font-size: 12px; color: var(--muted);">Supports MP4, WEBM, MP3, WAV • 100% Client Side Processing</div>
+      </div>
+      <video id="main-video" controls style="display: none;" playsinline></video>
+      <input type="file" id="file-input" accept="video/*,audio/*" style="display: none;" />
+    </div>
+
+    <div class="timeline-card">
+      <div class="timeline-header">
+        <span>PRECISE TRIM TIMELINE</span>
+        <div>Range: <b id="range-text" style="color:var(--text)">0.00s - 0.00s</b></div>
+      </div>
+
+      <div class="track-container" id="track-container">
+        <div class="track-bar" id="track-bar"></div>
+        <div class="range-slider-wrapper">
+          <input type="range" id="trim-start" min="0" max="100" value="0" step="0.01" disabled />
+          <input type="range" id="trim-end" min="0" max="100" value="100" step="0.01" disabled />
+        </div>
+      </div>
+
+      <div class="controls-bar">
+        <span id="clip-info" style="font-size: 12px; color: var(--muted);">No media loaded</span>
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <span style="font-size: 11px; color: var(--muted);">ℹ️ Exporting will only save the trimmed section or recorded clip.</span>
+          <button id="export-btn" class="btn-green" disabled>Export Trimmed Clip</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Local Analytics Tracking ---
+    const stats = {
+      visits: parseInt(localStorage.getItem('polaris_stat_visits') || '0') + 1,
+      uploads: parseInt(localStorage.getItem('polaris_stat_uploads') || '0'),
+      recordings: parseInt(localStorage.getItem('polaris_stat_recordings') || '0'),
+      trims: parseInt(localStorage.getItem('polaris_stat_trims') || '0'),
+      exports: parseInt(localStorage.getItem('polaris_stat_exports') || '0')
+    };
+
+    localStorage.setItem('polaris_stat_visits', stats.visits.toString());
+
+    function bumpStat(key) {
+      stats[key]++;
+      localStorage.setItem(`polaris_stat_${key}`, stats[key].toString());
+      updateDrawerUI();
+    }
+
+    function updateDrawerUI() {
+      document.getElementById('metric-visits').innerText = stats.visits;
+      document.getElementById('metric-uploads').innerText = stats.uploads;
+      document.getElementById('metric-recordings').innerText = stats.recordings;
+      document.getElementById('metric-trims').innerText = stats.trims;
+      document.getElementById('metric-exports').innerText = stats.exports;
+    }
+
+    // Worldwide Public Counter Integration (CountAPI)
+    async function initWorldwideCounter() {
+      try {
+        const res = await fetch('https://api.countapi.xyz/hit/polaris-studio-app/visits');
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('metric-global-visits').innerText = data.value || '1';
+        }
+      } catch (e) {
+        document.getElementById('metric-global-visits').innerText = 'Online';
+      }
+    }
+
+    // Ctrl x 3 Trigger Listener
+    let ctrlPressCount = 0;
+    let ctrlTimer = null;
+    const analyticsDrawer = document.getElementById('analytics-drawer');
+    const closeDrawerBtn = document.getElementById('close-drawer-btn');
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Control') {
+        ctrlPressCount++;
+        clearTimeout(ctrlTimer);
+        ctrlTimer = setTimeout(() => { ctrlPressCount = 0; }, 800);
+
+        if (ctrlPressCount >= 3) {
+          ctrlPressCount = 0;
+          analyticsDrawer.classList.toggle('active');
+          updateDrawerUI();
+        }
+      }
+    });
+
+    closeDrawerBtn.onclick = () => analyticsDrawer.classList.remove('active');
+    analyticsDrawer.onclick = (e) => {
+      if (e.target === analyticsDrawer) analyticsDrawer.classList.remove('active');
+    };
+
+    // --- Studio Core Logic ---
+    let mediaRecorder = null;
+    let activeStream = null;
+    let recordedChunks = [];
+    let activeBlob = null;
+    let trimPreviewTimer = null;
+
+    const mainVideo = document.getElementById('main-video');
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file-input');
+
+    const recMicBtn = document.getElementById('rec-mic-btn');
+    const recScreenBtn = document.getElementById('rec-screen-btn');
+    const stopRecBtn = document.getElementById('stop-rec-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    const exportBtn = document.getElementById('export-btn');
+
+    const trimStart = document.getElementById('trim-start');
+    const trimEnd = document.getElementById('trim-end');
+    const trackBar = document.getElementById('track-bar');
+    const rangeText = document.getElementById('range-text');
+    const clipInfo = document.getElementById('clip-info');
+
+    dropzone.onclick = () => fileInput.click();
+    fileInput.onchange = (e) => {
+      if (e.target.files[0]) {
+        loadMedia(e.target.files[0], e.target.files[0].name);
+        bumpStat('uploads');
+      }
+    };
+
+    dropzone.ondragover = (e) => e.preventDefault();
+    dropzone.ondrop = (e) => {
+      e.preventDefault();
+      if (e.dataTransfer.files[0]) {
+        loadMedia(e.dataTransfer.files[0], e.dataTransfer.files[0].name);
+        bumpStat('uploads');
+      }
+    };
+
+    function getBestMimeType() {
+      const types = [
+        'video/webm;codecs=vp9,opus',
+        'video/webm;codecs=vp8,opus',
+        'video/webm',
+        'video/mp4'
+      ];
+      for (const t of types) {
+        if (MediaRecorder.isTypeSupported(t)) return t;
+      }
+      return '';
+    }
+
+    function loadMedia(blob, name) {
+      activeBlob = blob;
+      const url = URL.createObjectURL(blob);
+      mainVideo.src = url;
+      dropzone.style.display = 'none';
+      mainVideo.style.display = 'block';
+
+      mainVideo.onloadedmetadata = () => {
+        const dur = mainVideo.duration || 100;
+        trimStart.max = dur;
+        trimEnd.max = dur;
+        trimStart.value = 0;
+        trimEnd.value = dur;
+        
+        trimStart.disabled = false;
+        trimEnd.disabled = false;
+        exportBtn.disabled = false;
+
+        updateTrackUI();
+        clipInfo.innerText = `${name} (${dur.toFixed(2)}s)`;
+      };
+    }
+
+    // Playback Loop Boundary Constraint
+    mainVideo.ontimeupdate = () => {
+      const s = parseFloat(trimStart.value) || 0;
+      const e = parseFloat(trimEnd.value) || mainVideo.duration;
+
+      if (mainVideo.currentTime < s) {
+        mainVideo.currentTime = s;
+      }
+      if (mainVideo.currentTime >= e && !mainVideo.paused) {
+        mainVideo.pause();
+        mainVideo.currentTime = s;
+      }
+    };
+
+    // Screen Recording
+    recScreenBtn.onclick = async () => {
+      try {
+        activeStream = await navigator.mediaDevices.getDisplayMedia({
+          video: { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 60 } },
+          audio: { echoCancellation: true, noiseSuppression: true }
+        });
+        startRecorder(activeStream, "Screen Capture");
+        bumpStat('recordings');
+      } catch (err) { console.error(err); }
+    };
+
+    // Mic Recording
+    recMicBtn.onclick = async () => {
+      try {
+        activeStream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 48000 }
+        });
+        startRecorder(activeStream, "Mic Audio Recording");
+        bumpStat('recordings');
+      } catch (err) { console.error(err); }
+    };
+
+    stopRecBtn.onclick = () => {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
+    };
+
+    function startRecorder(stream, label) {
+      recordedChunks = [];
+      const mimeType = getBestMimeType();
+      const options = mimeType ? { mimeType, videoBitsPerSecond: 5000000 } : {};
+
+      mediaRecorder = new MediaRecorder(stream, options);
+      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+      
+      mediaRecorder.onstop = () => {
+        const chunkMime = recordedChunks[0]?.type || 'video/webm';
+        const blob = new Blob(recordedChunks, { type: chunkMime });
+        loadMedia(blob, label);
+        
+        if (activeStream) {
+          activeStream.getTracks().forEach(t => t.stop());
+          activeStream = null;
+        }
+
+        recScreenBtn.style.display = 'inline-flex';
+        recMicBtn.style.display = 'inline-flex';
+        stopRecBtn.style.display = 'none';
+      };
+
+      mediaRecorder.start();
+
+      recScreenBtn.style.display = 'none';
+      recMicBtn.style.display = 'none';
+      stopRecBtn.style.display = 'inline-flex';
+      clipInfo.innerText = "Recording... click Stop Recording when finished.";
+
+      stream.getVideoTracks()[0]?.addEventListener('ended', () => {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+          mediaRecorder.stop();
+        }
+      });
+    }
+
+    function updateTrackUI() {
+      const dur = parseFloat(trimStart.max) || 100;
+      const s = parseFloat(trimStart.value);
+      const e = parseFloat(trimEnd.value);
+
+      const leftPct = (s / dur) * 100;
+      const rightPct = 100 - ((e / dur) * 100);
+
+      trackBar.style.left = `${leftPct}%`;
+      trackBar.style.right = `${rightPct}%`;
+
+      rangeText.innerText = `${s.toFixed(2)}s - ${e.toFixed(2)}s`;
+    }
+
+    // Auto-play 1.5s preview loop on slider input
+    function playTrimPreview(targetTime) {
+      if (trimPreviewTimer) clearTimeout(trimPreviewTimer);
+      mainVideo.currentTime = targetTime;
+      mainVideo.play().catch(() => {});
+
+      trimPreviewTimer = setTimeout(() => {
+        mainVideo.pause();
+      }, 1500);
+    }
+
+    trimStart.oninput = () => {
+      if (parseFloat(trimStart.value) >= parseFloat(trimEnd.value)) {
+        trimStart.value = Math.max(0, parseFloat(trimEnd.value) - 0.05);
+      }
+      updateTrackUI();
+      playTrimPreview(parseFloat(trimStart.value));
+      bumpStat('trims');
+    };
+
+    trimEnd.oninput = () => {
+      if (parseFloat(trimEnd.value) <= parseFloat(trimStart.value)) {
+        trimEnd.value = Math.min(parseFloat(trimStart.max), parseFloat(trimStart.value) + 0.05);
+      }
+      updateTrackUI();
+      playTrimPreview(Math.max(0, parseFloat(trimEnd.value) - 1.5));
+      bumpStat('trims');
+    };
+
+    clearBtn.onclick = () => {
+      if (trimPreviewTimer) clearTimeout(trimPreviewTimer);
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
+      if (activeStream) {
+        activeStream.getTracks().forEach(t => t.stop());
+        activeStream = null;
+      }
+
+      activeBlob = null;
+      mainVideo.pause();
+      mainVideo.src = "";
+      mainVideo.style.display = 'none';
+      dropzone.style.display = 'flex';
+
+      trimStart.disabled = true;
+      trimEnd.disabled = true;
+      exportBtn.disabled = true;
+
+      recScreenBtn.style.display = 'inline-flex';
+      recMicBtn.style.display = 'inline-flex';
+      stopRecBtn.style.display = 'none';
+
+      trackBar.style.left = '0%';
+      trackBar.style.right = '0%';
+      rangeText.innerText = "0.00s - 0.00s";
+      clipInfo.innerText = "No media loaded";
+      fileInput.value = "";
+    };
+
+    exportBtn.onclick = async () => {
+      if (!activeBlob) return;
+
+      exportBtn.disabled = true;
+      exportBtn.innerText = "Exporting...";
+
+      const sTime = parseFloat(trimStart.value);
+      const eTime = parseFloat(trimEnd.value);
+
+      mainVideo.currentTime = sTime;
+      await mainVideo.play();
+
+      const stream = mainVideo.captureStream ? mainVideo.captureStream() : mainVideo.mozCaptureStream();
+      const chunks = [];
+      const rec = new MediaRecorder(stream);
+
+      rec.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+      rec.onstop = () => {
+        const exported = new Blob(chunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(exported);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `polaris_clip_${Date.now()}.webm`;
+        a.click();
+
+        exportBtn.disabled = false;
+        exportBtn.innerText = "Export Trimmed Clip";
+        mainVideo.pause();
+        mainVideo.currentTime = sTime;
+        bumpStat('exports');
+      };
+
+      rec.start();
+      setTimeout(() => rec.stop(), Math.max(100, (eTime - sTime) * 1000));
+    };
+
+    // Initialize telemetry
+    updateDrawerUI();
+    initWorldwideCounter();
+  </script>
+</body>
+</html>
